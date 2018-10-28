@@ -62,15 +62,56 @@ def translate(text, target_lang):
 
 
 def parse_po(filepath, target_lang):
+    """Parse and process po file.
+
+    Input example is below:
+
+    #: ../../source/index.rst:16
+    msgid "Introduction"
+    msgstr ""
+
+    #: ../../source/index.rst:5
+    msgid ""
+    "This is an example of multiple lines"
+    "Hello"
+    "World"
+    msgstr ""
+    "これは複数行の例です。"
+    "こんにちは"
+    "世界"
+    """
     with open(filepath) as f:
+        processing_msgid = False
+        processing_msgstr = False
+        msgid = ""
         for line in f:
+            cleaned = line.strip(" \n")
+            if processing_msgstr:
+                if cleaned.startswith('"') and cleaned.endswith('"'):
+                    # msgstr might be multiple lines
+                    continue
+                else:
+                    processing_msgstr = False
+                    translated = translate(msgid, target_lang)
+                    print(f'msgstr "{translated}"')
+                    msgid = ""
+
+            if processing_msgid:
+                if cleaned.startswith('"') and cleaned.endswith('"'):
+                    msgid += cleaned.strip('"')
+                else:
+                    processing_msgid = False
+
             if line.startswith("msgstr "):
+                processing_msgstr = True
                 continue
+
             print(line, end="")
-            if line.startswith("msgid"):
-                text = line[len("msgid"):].strip(' "\n')
-                translation = translate(text, target_lang)
-                print(f'msgstr "{translation}"')
+
+            if cleaned.startswith("msgid"):
+                processing_msgid = True
+                text = cleaned[len("msgid"):].strip('"')
+                msgid += text
 
 
 def main():

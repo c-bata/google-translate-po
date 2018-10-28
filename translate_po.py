@@ -33,9 +33,7 @@ def cache_translation(callback):
     @functools.wraps(callback)
     def decorated(*args, **kwargs):
         file_path = os.path.join(_cache_home, _cache_filename)
-        text = args[0]
-        lang = kwargs.get("lang")
-        key = f"{lang}:{text}"
+        key = f"{args[0]}:{args[1]}"
         cache = {}
         try:
             with open(file_path) as f:
@@ -54,16 +52,16 @@ def cache_translation(callback):
 
 
 @cache_translation
-def translate(text, lang='ja'):
+def translate(text, target_lang):
     if text == "":
         return ""
     global _translated_text_length
     _translated_text_length += len(text)
-    translation = translate_client.translate(text, target_language=lang)
+    translation = translate_client.translate(text, target_language=target_lang)
     return translation.get('translatedText')
 
 
-def parse_po(filepath):
+def parse_po(filepath, target_lang):
     with open(filepath) as f:
         for line in f:
             if line.startswith("msgstr "):
@@ -71,16 +69,21 @@ def parse_po(filepath):
             print(line, end="")
             if line.startswith("msgid"):
                 text = line[len("msgid"):].strip(' "\n')
-                translation = translate(text)
+                translation = translate(text, target_lang)
                 print(f'msgstr "{translation}"')
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("filepath")
+    parser.add_argument('--lang', default="ja", type=str,
+                        help='target language (default: "ja")')
+    parser.add_argument('--currency', default=111.90, type=float,
+                        help='dollar per your currency. (default currency is yen: 111.90)')
     args = parser.parse_args()
-    parse_po(args.filepath)
-    fee = calculate_fee(_translated_text_length, dollar_per_currency=111.90)
+    parse_po(args.filepath, args.lang)
+
+    fee = calculate_fee(_translated_text_length, dollar_per_currency=args.currency)
     print("Cost: {} yen".format(fee), file=sys.stderr)
 
 

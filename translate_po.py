@@ -1,6 +1,8 @@
+import argparse
 import functools
 import json
 import os
+import sys
 
 from google.cloud import translate
 
@@ -10,10 +12,6 @@ _translated_text_length = 0
 
 service_account_json_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
 translate_client = translate.Client.from_service_account_json(service_account_json_path)
-
-
-def parse_po(filepath):
-    pass
 
 
 def calculate_fee(text_len, dollar_per_currency=None):
@@ -65,13 +63,25 @@ def translate(text, lang='ja'):
     return translation.get('translatedText')
 
 
-def main():
-    text = 'Hello World'
-    print(u'Text: {}'.format(text))
-    print(u'Translation: {}'.format(translate(text)))
+def parse_po(filepath):
+    with open(filepath) as f:
+        for line in f:
+            if line.startswith("msgstr "):
+                continue
+            print(line, end="")
+            if line.startswith("msgid"):
+                text = line[len("msgid"):].strip(' "\n')
+                translation = translate(text)
+                print(f'msgstr "{translation}"')
 
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filepath")
+    args = parser.parse_args()
+    parse_po(args.filepath)
     fee = calculate_fee(_translated_text_length, dollar_per_currency=111.90)
-    print("Cost: {} yen".format(fee))
+    print("Cost: {} yen".format(fee), file=sys.stderr)
 
 
 if __name__ == '__main__':

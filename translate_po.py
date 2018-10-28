@@ -57,6 +57,8 @@ def cache_translation(callback):
 
 @cache_translation
 def translate(text, lang='ja'):
+    if text == "":
+        return ""
     global _translated_text_length
     _translated_text_length += len(text)
     translation = translate_client.translate(text, target_language=lang)

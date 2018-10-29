@@ -7,7 +7,7 @@ import sys
 from google.cloud import translate
 
 _cache_home = "."
-_cache_filename = "po-translation-cache.json"
+_cache_filename = "translation-cache.json"
 _translated_text_length = 0
 
 service_account_json_path = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
